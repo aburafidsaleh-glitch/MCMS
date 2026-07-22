@@ -9,7 +9,10 @@ import {
   CheckCircle,
   XCircle,
   Download,
-  FileText
+  FileText,
+  MapPin,
+  Phone,
+  ChevronRight
 } from 'lucide-react';
 import { House, CollectionRecord, HouseCategory, User } from '../types';
 import { formatBDT, formatMonthName, toBnDigits } from '../utils/formatters';
@@ -94,7 +97,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
 
   const handleBulkDelete = () => {
     if (selectedHouseIds.length === 0) return;
-    if (confirm(`আপনি কি নিশ্চিত যে নির্বাচন করা ${selectedHouseIds.length} টি বাড়ি মুছে ফেলতে চান?`)) {
+    if (confirm(`আপনি কি নিশ্চিত যে নির্বাচন করা ${selectedHouseIds.length} টি বাড়ি তালিকা থেকে মুছে ফেলতে চান? (সফট ডিলিট সংক্রান্ত অডিট ট্রেইল সংরক্ষিত থাকবে)`)) {
       selectedHouseIds.forEach(id => onDeleteHouse(id));
       setSelectedHouseIds([]);
     }
@@ -190,16 +193,16 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header & Control Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
         <div>
-          <h1 className="text-xl font-black text-slate-900 flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-emerald-700" />
+          <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+            <Building2 className="w-6 h-6 text-emerald-800" />
             <span>বাড়ি ও দাতা নির্দেশিকা (House Directory)</span>
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            নিবন্ধিত বাড়ি: <strong className="text-slate-800">{toBnDigits(houses.length)} টি</strong>
+          <p className="text-xs text-slate-500 mt-1">
+            নিবন্ধিত বাড়ি: <strong className="text-slate-800 font-mono">{toBnDigits(houses.length)} টি</strong>
           </p>
         </div>
 
@@ -207,43 +210,43 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
           {selectedHouseIds.length > 0 && (
             <button
               onClick={handleBulkDelete}
-              className="inline-flex items-center space-x-1.5 px-3 py-2 text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all"
+              className="min-h-[48px] px-3.5 py-2.5 text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all"
             >
-              <Trash2 className="w-4 h-4 text-red-600" />
+              <Trash2 className="w-4 h-4 text-red-600 inline mr-1" />
               <span>নির্বাচিত ({selectedHouseIds.length}) টি মুছুন</span>
             </button>
           )}
 
           <button
             onClick={() => setIsBulkImportOpen(true)}
-            className="inline-flex items-center space-x-1.5 px-3 py-2 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition-all"
+            className="min-h-[48px] px-3.5 py-2.5 text-xs font-bold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition-all"
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
-            <span>ইমপোর্ট (Excel / CSV)</span>
+            <FileSpreadsheet className="w-4 h-4 text-emerald-700 inline mr-1" />
+            <span>ইমপোর্ট (Excel/CSV)</span>
           </button>
 
           <button
             onClick={handleOpenAdd}
-            className="inline-flex items-center space-x-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-800 hover:bg-emerald-900 rounded-xl transition-all shadow-md shadow-emerald-900/10"
+            className="min-h-[48px] px-4 py-2.5 text-xs font-bold text-white bg-emerald-800 hover:bg-emerald-900 rounded-xl transition-all shadow-md shadow-emerald-900/10 flex items-center gap-1.5"
           >
-            <Plus className="w-4 h-4 text-amber-300" />
-            <span>নতুন বাড়ি যুক্ত করুন</span>
+            <Plus className="w-4.5 h-4.5 text-amber-300" />
+            <span>নতুন বাড়ি নিবন্ধিত করুন</span>
           </button>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs space-y-3">
+      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="বাড়ি নং, দাতা বা ফোন দিয়ে খুঁজুন..."
-              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600"
+              className="w-full min-h-[48px] pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600 font-medium"
             />
           </div>
 
@@ -252,7 +255,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
             <select
               value={selectedArea}
               onChange={(e) => setSelectedArea(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600 font-medium text-slate-700"
+              className="w-full min-h-[48px] px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600 font-semibold text-slate-700"
             >
               <option value="ALL">সকল মহল্লা / পাড়া</option>
               {areas.filter(a => a !== 'ALL').map(a => (
@@ -266,7 +269,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600 font-medium text-slate-700"
+              className="w-full min-h-[48px] px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600 font-semibold text-slate-700"
             >
               <option value="ALL">সকল ক্যাটাগরি</option>
               {categories.filter(c => c !== 'ALL').map(c => (
@@ -277,8 +280,94 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
         </div>
       </div>
 
-      {/* House Table */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-2xs overflow-hidden">
+      {/* Mobile-First Responsive Cards List (Visible on Mobile) */}
+      <div className="block md:hidden space-y-3">
+        {filteredHouses.length === 0 ? (
+          <div className="bg-white p-8 text-center rounded-2xl border border-slate-200 text-slate-500">
+            কোনো বাড়ি পাওয়া যায়নি।
+          </div>
+        ) : (
+          filteredHouses.map(house => {
+            const isSelected = selectedHouseIds.includes(house.id);
+            return (
+              <div
+                key={house.id}
+                className={`bg-white rounded-2xl p-4 border transition-all ${
+                  isSelected ? 'border-emerald-600 bg-emerald-50/20' : 'border-slate-200/80 shadow-2xs'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleSelectOne(house.id)}
+                      className="w-5 h-5 rounded text-emerald-800 focus:ring-emerald-600"
+                    />
+                    <span className="bg-emerald-950 text-amber-300 font-mono font-bold text-xs px-2.5 py-1 rounded-lg">
+                      {house.houseNo}
+                    </span>
+                    <span className="text-[11px] bg-slate-100 text-slate-700 font-semibold px-2 py-0.5 rounded-md">
+                      {house.area}
+                    </span>
+                  </div>
+
+                  <span className="font-extrabold text-sm text-emerald-900 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                    {formatBDT(house.monthlyPledge)}
+                  </span>
+                </div>
+
+                <div className="mt-2 space-y-1">
+                  <h3 className="font-extrabold text-slate-900 text-sm">{house.familyHead}</h3>
+                  <p className="text-xs text-slate-500 flex items-center gap-1">
+                    <Building2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>{house.houseName} ({house.category})</span>
+                  </p>
+                  <p className="text-xs text-slate-500 flex items-center gap-1">
+                    <Phone className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span className="font-mono">{toBnDigits(house.phone)}</span>
+                  </p>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setViewingHouse(house)}
+                    className="min-h-[48px] flex-1 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-bold rounded-xl flex items-center justify-center gap-1"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>ইতিহাস দেখুন</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEdit(house)}
+                    className="min-h-[48px] px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center gap-1"
+                  >
+                    <Edit className="w-4 h-4" />
+                    <span>সম্পাদনা</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm(`আপনি কি নিশ্চিত যে ${house.houseNo} সফট ডিলিট করতে চান?`)) {
+                        onDeleteHouse(house.id);
+                      }
+                    }}
+                    className="min-h-[48px] px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl flex items-center justify-center"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop Table View (Visible on MD+) */}
+      <div className="hidden md:block bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
@@ -288,7 +377,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
                     type="checkbox"
                     checked={filteredHouses.length > 0 && selectedHouseIds.length === filteredHouses.length}
                     onChange={handleSelectAll}
-                    className="rounded text-emerald-800 focus:ring-emerald-600"
+                    className="w-4 h-4 rounded text-emerald-800 focus:ring-emerald-600"
                   />
                 </th>
                 <th className="p-3.5 font-bold">বাড়ি নম্বর</th>
@@ -298,7 +387,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
                 <th className="p-3.5 font-bold">মাসিক নির্ধারিত ফি</th>
                 <th className="p-3.5 font-bold">ক্যাটাগরি</th>
                 <th className="p-3.5 font-bold">স্ট্যাটাস</th>
-                <th className="p-3.5 font-bold text-right">আকশন</th>
+                <th className="p-3.5 font-bold text-right">অ্যাকশন</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -319,7 +408,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => handleSelectOne(house.id)}
-                          className="rounded text-emerald-800 focus:ring-emerald-600"
+                          className="w-4 h-4 rounded text-emerald-800 focus:ring-emerald-600"
                         />
                       </td>
                       <td className="p-3.5 font-mono font-bold text-emerald-900">
@@ -357,25 +446,25 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
                           <button
                             onClick={() => setViewingHouse(house)}
                             title="প্রোফাইল ও হিসাবের ইতিহাস"
-                            className="p-1.5 text-emerald-800 hover:bg-emerald-100 rounded-lg transition-colors"
+                            className="p-2 text-emerald-800 hover:bg-emerald-100 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                           >
                             <FileText className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleOpenEdit(house)}
                             title="সম্পাদনা করুন"
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => {
-                              if (confirm(`আপনি কি নিশ্চিত যে ${house.houseNo} মুছে ফেলতে চান?`)) {
+                              if (confirm(`আপনি কি নিশ্চিত যে ${house.houseNo} মুছে ফেলতে চান? (অডিট ট্রেইলে সংরক্ষিত থাকবে)`)) {
                                 onDeleteHouse(house.id);
                               }
                             }}
                             title="মুছে ফেলুন"
-                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -392,17 +481,17 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
 
       {/* Modal 1: Add/Edit House */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-lg bg-white rounded-2xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4 backdrop-blur-xs">
+          <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-lg font-bold text-slate-900">
                 {editingHouse ? 'বাড়ি সম্পাদনা করুন' : 'নতুন বাড়ি নিবন্ধন করুন'}
               </h3>
-              <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+              <button onClick={() => setIsAddModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 rounded-lg">✕</button>
             </div>
 
-            <form onSubmit={handleSubmitHouse} className="space-y-3 text-xs">
-              <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={handleSubmitHouse} className="space-y-3.5 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">বাড়ি নম্বর *</label>
                   <input
@@ -411,7 +500,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
                     placeholder="যেমন: ১০১/এ"
                     value={formData.houseNo}
                     onChange={(e) => setFormData({ ...formData, houseNo: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                    className="w-full min-h-[48px] px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 font-medium"
                   />
                 </div>
                 <div>
@@ -421,12 +510,12 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
                     placeholder="যেমন: বাইতুল আমান ভিলা"
                     value={formData.houseName}
                     onChange={(e) => setFormData({ ...formData, houseName: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                    className="w-full min-h-[48px] px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 font-medium"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">পরিবারের প্রধানের নাম *</label>
                   <input
@@ -435,7 +524,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
                     placeholder="যেমন: হাজী আব্দুর রশিদ"
                     value={formData.familyHead}
                     onChange={(e) => setFormData({ ...formData, familyHead: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                    className="w-full min-h-[48px] px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 font-medium"
                   />
                 </div>
                 <div>
@@ -445,18 +534,18 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
                     placeholder="01712-000000"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 font-mono"
+                    className="w-full min-h-[48px] px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 font-mono"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">মহল্লা / এলাকা</label>
                   <select
                     value={formData.area}
                     onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 font-medium"
+                    className="w-full min-h-[48px] px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 font-semibold text-slate-800"
                   >
                     {areas.filter(a => a !== 'ALL').map(a => (
                       <option key={a} value={a}>{a}</option>
@@ -471,7 +560,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
                     required
                     value={formData.monthlyPledge}
                     onChange={(e) => setFormData({ ...formData, monthlyPledge: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 font-bold text-emerald-900"
+                    className="w-full min-h-[48px] px-3.5 py-2.5 bg-emerald-50/60 border border-emerald-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 font-bold text-emerald-950 text-base"
                   />
                 </div>
               </div>
@@ -481,7 +570,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value as HouseCategory })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                  className="w-full min-h-[48px] px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 font-semibold"
                 >
                   <option value="General">General (সাধারণ)</option>
                   <option value="Donation Premium">Donation Premium (বিশেষ দানশীল)</option>
@@ -494,13 +583,13 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium"
+                  className="min-h-[48px] px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium"
                 >
                   বাতিল
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl shadow-md"
+                  className="min-h-[48px] px-6 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl shadow-md"
                 >
                   {editingHouse ? 'আপডেট করুন' : 'সংরক্ষণ করুন'}
                 </button>
@@ -512,14 +601,14 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
 
       {/* Modal 2: Bulk Import */}
       {isBulkImportOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-xl bg-white rounded-2xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4 backdrop-blur-xs">
+          <div className="w-full max-w-xl bg-white rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center space-x-2">
                 <FileSpreadsheet className="w-5 h-5 text-emerald-700" />
                 <h3 className="text-lg font-bold text-slate-900">একসাথে একাধিক বাড়ি ইমপোর্ট (Bulk CSV)</h3>
               </div>
-              <button onClick={() => setIsBulkImportOpen(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+              <button onClick={() => setIsBulkImportOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 rounded-lg">✕</button>
             </div>
 
             <div className="space-y-3 text-xs">
@@ -530,7 +619,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
                 </div>
                 <button
                   onClick={handleDownloadSampleCsv}
-                  className="px-3 py-1.5 bg-emerald-800 text-white font-bold rounded-lg hover:bg-emerald-900 flex items-center gap-1"
+                  className="min-h-[44px] px-3.5 py-2 bg-emerald-800 text-white font-bold rounded-xl hover:bg-emerald-900 flex items-center gap-1"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>নমুনা ডাউনলোড</span>
@@ -553,14 +642,14 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
               <div className="pt-2 flex justify-end space-x-2">
                 <button
                   onClick={() => setIsBulkImportOpen(false)}
-                  className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-medium"
+                  className="min-h-[48px] px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-medium"
                 >
                   বাতিল
                 </button>
                 <button
                   onClick={handleProcessBulkCsv}
                   disabled={!csvText.trim()}
-                  className="px-5 py-2 bg-emerald-800 hover:bg-emerald-900 disabled:opacity-50 text-white font-bold rounded-xl shadow-md"
+                  className="min-h-[48px] px-5 py-2.5 bg-emerald-800 hover:bg-emerald-900 disabled:opacity-50 text-white font-bold rounded-xl shadow-md"
                 >
                   ইমপোর্ট সম্পন্ন করুন
                 </button>
@@ -572,8 +661,8 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
 
       {/* Modal 3: Viewing Individual House Profile */}
       {viewingHouse && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-lg bg-white rounded-2xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4 backdrop-blur-xs">
+          <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">
@@ -582,7 +671,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
                 <h3 className="text-lg font-bold text-slate-900 mt-1">{viewingHouse.familyHead}</h3>
                 <p className="text-xs text-slate-500">{viewingHouse.houseName} - {viewingHouse.area}</p>
               </div>
-              <button onClick={() => setViewingHouse(null)} className="text-slate-400 hover:text-slate-600">✕</button>
+              <button onClick={() => setViewingHouse(null)} className="p-2 text-slate-400 hover:text-slate-600 rounded-lg">✕</button>
             </div>
 
             <div className="space-y-3 text-xs">
@@ -600,7 +689,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
               <h4 className="font-bold text-slate-900 pt-2 border-t border-slate-100">মাসিক চাঁদা পরিশোধ ইতিহাস</h4>
               <div className="space-y-2 max-h-56 overflow-y-auto">
                 {collections.filter(c => c.houseId === viewingHouse.id).map(col => (
-                  <div key={col.id} className="p-2.5 bg-white border border-slate-200 rounded-xl flex items-center justify-between">
+                  <div key={col.id} className="p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between">
                     <div>
                       <span className="font-bold text-slate-800 block">{formatMonthName(col.month)}</span>
                       <span className="text-[11px] text-slate-500">
@@ -612,7 +701,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
                       <span className={`font-bold block ${col.status === 'PAID' ? 'text-emerald-700' : 'text-red-600'}`}>
                         {formatBDT(col.paidAmount)} / {formatBDT(col.targetAmount)}
                       </span>
-                      <span className="text-[10px] text-slate-400">
+                        <span className="text-[10px] text-slate-400">
                         {col.lastPaidDate || 'পরিশোধ হয়নি'}
                       </span>
                     </div>
@@ -624,7 +713,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
             <div className="pt-2 text-right">
               <button
                 onClick={() => setViewingHouse(null)}
-                className="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-xl"
+                className="min-h-[48px] w-full sm:w-auto px-6 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl"
               >
                 বন্ধ করুন
               </button>

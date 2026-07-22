@@ -309,6 +309,12 @@ export const INITIAL_AUDIT_LOGS: AuditLog[] = [
     userName: 'মাওলানা রফিকুল ইসলাম',
     userRole: 'ADMIN',
     action: 'SHEET_GENERATED',
+    category: 'CREATE',
+    entityType: 'COLLECTION',
+    entityId: 'COL-202607',
+    oldValue: 'মাসের পূর্ববর্তী শীট নেই',
+    newValue: '২০২৬-০৭ মাসের ১৬টি বাড়ির কালেকশন রেজিস্টার',
+    reason: 'নতুন মাসের নিয়মিত কালেকশন শীট জেনারেশন',
     details: 'শ্রাবণ ১৪৩৩ (July 2026) মাসের জন্য ১৬ টি বাড়ির চাঁদার হিসাব তৈরি করা হয়েছে।'
   },
   {
@@ -318,6 +324,12 @@ export const INITIAL_AUDIT_LOGS: AuditLog[] = [
     userName: 'মোঃ জসিম উদ্দিন',
     userRole: 'COLLECTOR',
     action: 'PAYMENT_COLLECTED',
+    category: 'PAYMENT',
+    entityType: 'COLLECTION',
+    entityId: 'H-101',
+    oldValue: 'বকেয়া: ৳৫০০',
+    newValue: 'পরিশোধিত: ৳৫০০ (রসিদ: REC-202607-001)',
+    reason: 'সংগ্রাহক কর্তৃক সরেজমিনে নগদ চাঁদা সংগ্রহ',
     details: 'বাড়ি ১০১/এ (হাজী আব্দুর রশিদ) থেকে ৳৫০০ নগদ আদায় এবং রসিদ REC-202607-001 ইসু করা হয়েছে।'
   },
   {
@@ -327,6 +339,42 @@ export const INITIAL_AUDIT_LOGS: AuditLog[] = [
     userName: 'মোঃ জসিম উদ্দিন',
     userRole: 'COLLECTOR',
     action: 'PAYMENT_COLLECTED',
+    category: 'PAYMENT',
+    entityType: 'COLLECTION',
+    entityId: 'H-102',
+    oldValue: 'বকেয়া: ৳১০০০',
+    newValue: 'পরিশোধিত: ৳১০০০ (রসিদ: REC-202607-002)',
+    reason: 'বিকাশ পেমেন্ট গেটওয়ে মারফত চাঁদা প্রাপ্তি',
     details: 'বাড়ি ১০২/বি (খান ভবন) থেকে ৳১০০০ বিকাশ মারফত আদায় ও রসিদ REC-202607-002 ইসু।'
+  },
+  {
+    id: 'LOG-004',
+    timestamp: '2026-07-12T09:15:00Z',
+    userId: 'U-4',
+    userName: 'মোঃ কামাল হোসেন',
+    userRole: 'COLLECTOR',
+    action: 'PAYMENT_COLLECTED',
+    category: 'AMOUNT_CHANGE',
+    entityType: 'COLLECTION',
+    entityId: 'H-202',
+    oldValue: 'বকেয়া: ৳১০০০',
+    newValue: 'আংশিক জমা: ৳৫০০ (অবশিষ্ট বকেয়া: ৳৫০০)',
+    reason: 'দাতার অনুরোধে আংশিক টাকা গ্রহণ',
+    details: 'বাড়ি ২০২/বি (সোবহান কুটির) থেকে ৳৫০০ আংশিক চাঁদা আদায় করা হয়েছে।'
+  },
+  {
+    id: 'LOG-005',
+    timestamp: '2026-07-15T11:00:00Z',
+    userId: 'U-1',
+    userName: 'মাওলানা রফিকুল ইসলাম',
+    userRole: 'ADMIN',
+    action: 'HOUSE_UPDATED',
+    category: 'UPDATE',
+    entityType: 'HOUSE',
+    entityId: 'H-301',
+    oldValue: 'মাসিক চাঁদা: ৳১৫০০',
+    newValue: 'মাসিক চাঁদা: ৳২০০০ (ক্যাটাগরি: Business)',
+    reason: 'বাণিজ্যিক প্রতিষ্ঠান বৃদ্ধি পাওয়ায় নতুন রেট নির্ধারণ',
+    details: 'বাড়ি ৩০১/এ (আহমেদ টাওয়ার) এর মাসিক চাঁদার পরিমাণ ৳১৫০০ থেকে বাড়িয়ে ৳২০০০ করা হয়েছে।'
   }
 ];

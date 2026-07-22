@@ -25,6 +25,7 @@ export interface House {
   category: HouseCategory;  // e.g. 'General'
   address: string;          // e.g. 'রোড-৪, ব্লক-বি'
   isActive: boolean;
+  isDeleted?: boolean;      // Soft delete flag
   notes?: string;
   createdAt: string;
 }
@@ -61,13 +62,21 @@ export interface PaymentTransaction {
   notes?: string;
 }
 
+export type AuditCategory = 'CREATE' | 'UPDATE' | 'DELETE' | 'PAYMENT' | 'AMOUNT_CHANGE' | 'ROLE_CHANGE' | 'STATUS_CHANGE' | 'SYSTEM';
+
 export interface AuditLog {
   id: string;
   timestamp: string;
   userId: string;
   userName: string;
   userRole: UserRole;
-  action: string;           // e.g. 'PAYMENT_COLLECTED', 'HOUSE_CREATED', 'SHEET_GENERATED'
+  action: string;           // e.g. 'PAYMENT_COLLECTED', 'HOUSE_CREATED', 'HOUSE_UPDATED', 'HOUSE_DELETED', 'ROLE_CHANGED'
+  category?: AuditCategory;
+  entityType?: 'HOUSE' | 'COLLECTION' | 'USER' | 'SETTINGS' | 'SYSTEM';
+  entityId?: string;
+  oldValue?: string;
+  newValue?: string;
+  reason?: string;
   details: string;
 }
 

@@ -425,28 +425,42 @@ export const CollectorView: React.FC<CollectorViewProps> = ({
 
                 {/* Amount Selection */}
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-700 block">আদায়কৃত পরিমাণ (BDT):</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-gray-700 block">আদায়কৃত পরিমাণ (BDT):</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const col = collectionMap.get(activeHouse.id);
+                        const due = col ? col.dueAmount : activeHouse.monthlyPledge;
+                        setCollectAmount(due > 0 ? due : activeHouse.monthlyPledge);
+                      }}
+                      className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200"
+                    >
+                      পূর্ণ বকেয়া নির্বাচন (৳{toBnDigits(collectionMap.get(activeHouse.id)?.dueAmount ?? activeHouse.monthlyPledge)})
+                    </button>
+                  </div>
+
                   <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-emerald-800 text-lg">৳</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-emerald-800 text-xl">৳</span>
                     <input
                       type="number"
                       value={collectAmount || ''}
                       onChange={(e) => setCollectAmount(Number(e.target.value))}
-                      className="w-full pl-9 pr-4 py-3 text-xl font-extrabold text-emerald-950 bg-emerald-50/50 border border-emerald-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                      className="w-full min-h-[52px] pl-10 pr-4 py-3 text-2xl font-extrabold text-emerald-950 bg-emerald-50/50 border border-emerald-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-600"
                     />
                   </div>
 
-                  {/* Preset Buttons */}
+                  {/* Preset Buttons with 48px touch targets */}
                   <div className="grid grid-cols-4 gap-2 pt-1">
-                    {[200, 300, 500, 1000].map(amt => (
+                    {[200, 300, 500, 1000, 1500, 2000, 3000, 5000].map(amt => (
                       <button
                         key={amt}
                         type="button"
                         onClick={() => setCollectAmount(amt)}
-                        className={`py-1.5 text-xs font-bold rounded-lg border transition-all ${
+                        className={`min-h-[48px] px-2 text-xs font-extrabold rounded-xl border transition-all ${
                           collectAmount === amt
-                            ? 'bg-emerald-800 text-white border-emerald-800'
-                            : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                            ? 'bg-emerald-800 text-white border-emerald-800 shadow-xs'
+                            : 'bg-gray-50 text-gray-800 border-gray-200 hover:bg-gray-100'
                         }`}
                       >
                         ৳{toBnDigits(amt)}
@@ -455,56 +469,56 @@ export const CollectorView: React.FC<CollectorViewProps> = ({
                   </div>
                 </div>
 
-                {/* Payment Method Toggle */}
+                {/* Payment Method Toggle with 48px+ touch targets */}
                 <div className="space-y-2 pt-1">
-                  <label className="text-xs font-bold text-gray-700 block">পেমেন্ট মাধ্যম নির্বাচন করুন:</label>
+                  <label className="text-xs font-bold text-gray-700 block">পেমেন্ট মাধ্যম (এক ট্যাপে সিলেক্ট):</label>
                   <div className="grid grid-cols-4 gap-2">
                     <button
                       type="button"
                       onClick={() => setPaymentMethod('CASH')}
-                      className={`py-2 text-xs font-bold rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${
+                      className={`min-h-[52px] px-2 text-xs font-bold rounded-2xl border flex flex-col items-center justify-center gap-1 transition-all ${
                         paymentMethod === 'CASH'
-                          ? 'bg-emerald-800 text-white border-emerald-800 shadow-xs'
+                          ? 'bg-emerald-800 text-white border-emerald-800 shadow-md'
                           : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                       }`}
                     >
-                      <DollarSign className="w-4 h-4" />
+                      <DollarSign className="w-4.5 h-4.5" />
                       <span>নগদ</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setPaymentMethod('BKASH')}
-                      className={`py-2 text-xs font-bold rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${
+                      className={`min-h-[52px] px-2 text-xs font-bold rounded-2xl border flex flex-col items-center justify-center gap-1 transition-all ${
                         paymentMethod === 'BKASH'
-                          ? 'bg-pink-600 text-white border-pink-600 shadow-xs'
+                          ? 'bg-pink-600 text-white border-pink-600 shadow-md'
                           : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                       }`}
                     >
-                      <Smartphone className="w-4 h-4" />
+                      <Smartphone className="w-4.5 h-4.5" />
                       <span>বিকাশ</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setPaymentMethod('NAGAD')}
-                      className={`py-2 text-xs font-bold rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${
+                      className={`min-h-[52px] px-2 text-xs font-bold rounded-2xl border flex flex-col items-center justify-center gap-1 transition-all ${
                         paymentMethod === 'NAGAD'
-                          ? 'bg-orange-600 text-white border-orange-600 shadow-xs'
+                          ? 'bg-orange-600 text-white border-orange-600 shadow-md'
                           : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                       }`}
                     >
-                      <CreditCard className="w-4 h-4" />
-                      <span>নগদ ওয়ালেট</span>
+                      <CreditCard className="w-4.5 h-4.5" />
+                      <span>নগদ</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setPaymentMethod('BANK')}
-                      className={`py-2 text-xs font-bold rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${
+                      className={`min-h-[52px] px-2 text-xs font-bold rounded-2xl border flex flex-col items-center justify-center gap-1 transition-all ${
                         paymentMethod === 'BANK'
-                          ? 'bg-blue-700 text-white border-blue-700 shadow-xs'
+                          ? 'bg-blue-700 text-white border-blue-700 shadow-md'
                           : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                       }`}
                     >
-                      <Wallet className="w-4 h-4" />
+                      <Wallet className="w-4.5 h-4.5" />
                       <span>ব্যাংক</span>
                     </button>
                   </div>
@@ -512,29 +526,29 @@ export const CollectorView: React.FC<CollectorViewProps> = ({
 
                 {/* Optional Note */}
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-gray-600 block">মন্তব্য / নোট (ঐচ্ছিক):</label>
+                  <label className="text-xs font-medium text-gray-600 block">নোট / মন্তব্য (ঐচ্ছিক):</label>
                   <input
                     type="text"
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    placeholder="যেমন: বাকী ৫০০ টাকা আগামী জুমাবারে দেবেন..."
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="যেমন: বাকী টাকা জুমাবারে দেবেন..."
+                    className="w-full min-h-[48px] px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
                   />
                 </div>
 
-                {/* Confirm Action */}
-                <div className="pt-3">
+                {/* Confirm Action Button - Sticky touch target 56px */}
+                <div className="pt-2">
                   <button
                     disabled={isSubmitting || collectAmount <= 0}
                     onClick={handleConfirmCollection}
-                    className="w-full py-3.5 bg-emerald-800 hover:bg-emerald-900 disabled:opacity-50 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-900/20 flex items-center justify-center space-x-2 transition-all"
+                    className="w-full min-h-[56px] bg-emerald-800 hover:bg-emerald-900 active:scale-[0.99] disabled:opacity-50 text-white font-extrabold text-base rounded-2xl shadow-xl shadow-emerald-900/25 flex items-center justify-center space-x-2 transition-all"
                   >
                     {isSubmitting ? (
-                      <span>প্রসেসিং হচ্ছে...</span>
+                      <span>জমাকরণ হচ্ছে...</span>
                     ) : (
                       <>
-                        <ShieldCheck className="w-5 h-5 text-amber-300" />
-                        <span>পেমেন্ট নিশ্চিত করুন ({formatBDT(collectAmount)})</span>
+                        <ShieldCheck className="w-6 h-6 text-amber-300" />
+                        <span>আদায় কনফার্ম করুন ({formatBDT(collectAmount)})</span>
                       </>
                     )}
                   </button>

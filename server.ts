@@ -75,7 +75,9 @@ async function startServer() {
 
   // Houses CRUD
   app.get('/api/houses', (req, res) => {
-    res.json(dbState.houses);
+    const includeDeleted = req.query.includeDeleted === 'true';
+    const activeList = includeDeleted ? dbState.houses : dbState.houses.filter(h => !h.isDeleted);
+    res.json(activeList);
   });
 
   app.post('/api/houses', (req, res) => {
@@ -90,6 +92,7 @@ async function startServer() {
       category: req.body.category || 'General',
       address: req.body.address || '',
       isActive: req.body.isActive !== undefined ? req.body.isActive : true,
+      isDeleted: false,
       notes: req.body.notes || '',
       createdAt: new Date().toISOString().split('T')[0]
     };
@@ -123,6 +126,12 @@ async function startServer() {
       userName: req.body.userName || 'মাওলানা রফিকুল ইসলাম',
       userRole: req.body.userRole || 'ADMIN',
       action: 'HOUSE_CREATED',
+      category: 'CREATE',
+      entityType: 'HOUSE',
+      entityId: newHouse.id,
+      oldValue: 'বিদ্যমান ছিল না',
+      newValue: `${newHouse.houseNo} - ${newHouse.familyHead} (মাসিক: ৳${newHouse.monthlyPledge})`,
+      reason: req.body.reason || 'নতুন মহাল্লা সদস্য নিবন্ধন',
       details: `নতুন বাড়ি নিবন্ধিত: ${newHouse.houseNo} - ${newHouse.familyHead} (${newHouse.area}), মাসিক চাঁদা: ৳${newHouse.monthlyPledge}`
     });
 
@@ -137,8 +146,18 @@ async function startServer() {
       return res.status(404).json({ error: 'House not found' });
     }
 
-    const updated = { ...dbState.houses[idx], ...req.body };
+    const oldHouse = dbState.houses[idx];
+    const oldPledge = oldHouse.monthlyPledge;
+    const oldName = oldHouse.familyHead;
+    const oldCategory = oldHouse.category;
+
+    const updated = { ...oldHouse, ...req.body };
     dbState.houses[idx] = updated;
+
+    let auditCategory: any = 'UPDATE';
+    if (oldPledge !== updated.monthlyPledge) {
+      auditCategory = 'AMOUNT_CHANGE';
+    }
 
     dbState.auditLogs.unshift({
       id: `LOG-${Date.now()}`,
@@ -146,8 +165,14 @@ async function startServer() {
       userId: req.body.userId || 'U-1',
       userName: req.body.userName || 'মাওলানা রফিকুল ইসলাম',
       userRole: req.body.userRole || 'ADMIN',
-      action: 'HOUSE_UPDATED',
-      details: `বাড়ি আপডেট করা হয়েছে: ${updated.houseNo} (${updated.familyHead})`
+      action: auditCategory === 'AMOUNT_CHANGE' ? 'AMOUNT_CHANGED' : 'HOUSE_UPDATED',
+      category: auditCategory,
+      entityType: 'HOUSE',
+      entityId: houseId,
+      oldValue: `গৃহপ্রধান: ${oldName}, চাঁদা: ৳${oldPledge}, টাইপ: ${oldCategory}`,
+      newValue: `গৃহপ্রধান: ${updated.familyHead}, চাঁদা: ৳${updated.monthlyPledge}, টাইপ: ${updated.category}`,
+      reason: req.body.reason || 'কমিটির সিদ্ধান্তক্রমে বাড়ির তথ্য সংশোধন',
+      details: `বাড়ি তথ্য আপডেট: ${updated.houseNo} (${updated.familyHead})`
     });
 
     saveDb();
@@ -156,23 +181,34 @@ async function startServer() {
 
   app.delete('/api/houses/:id', (req, res) => {
     const houseId = req.params.id;
-    const house = dbState.houses.find(h => h.id === houseId);
-    dbState.houses = dbState.houses.filter(h => h.id !== houseId);
-
-    if (house) {
-      dbState.auditLogs.unshift({
-        id: `LOG-${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        userId: 'U-1',
-        userName: 'মাওলানা রফিকুল ইসলাম',
-        userRole: 'ADMIN',
-        action: 'HOUSE_DELETED',
-        details: `বাড়ি মুছে ফেলা হয়েছে: ${house.houseNo} (${house.familyHead})`
-      });
+    const houseIdx = dbState.houses.findIndex(h => h.id === houseId);
+    if (houseIdx === -1) {
+      return res.status(404).json({ error: 'House not found' });
     }
 
+    const house = dbState.houses[houseIdx];
+    // Soft Delete (Safety)
+    house.isDeleted = true;
+    house.isActive = false;
+
+    dbState.auditLogs.unshift({
+      id: `LOG-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      userId: req.body?.userId || 'U-1',
+      userName: req.body?.userName || 'মাওলানা রফিকুল ইসলাম',
+      userRole: 'ADMIN',
+      action: 'HOUSE_DELETED',
+      category: 'DELETE',
+      entityType: 'HOUSE',
+      entityId: houseId,
+      oldValue: `সক্রিয় বাড়ি: ${house.houseNo} - ${house.familyHead}`,
+      newValue: 'সফট ডিলিট (সংরক্ষিত কিন্তু নিষ্ক্রিয়)',
+      reason: req.body?.reason || 'কমিটি কর্তৃক বাড়ি পরিবর্তন/স্থানান্তর বাবদ তালিকা থেকে অপসারণ',
+      details: `বাড়ি সফট ডিলিট করা হয়েছে: ${house.houseNo} (${house.familyHead})`
+    });
+
     saveDb();
-    res.json({ success: true, message: 'House removed' });
+    res.json({ success: true, message: 'House soft deleted successfully' });
   });
 
   // Bulk Import
@@ -364,6 +400,12 @@ async function startServer() {
       userName: collectorName || 'ক্যাশ কালেক্টর',
       userRole: 'COLLECTOR',
       action: 'PAYMENT_COLLECTED',
+      category: 'PAYMENT',
+      entityType: 'COLLECTION',
+      entityId: houseId,
+      oldValue: `পূর্ববর্তী পরিশোধ: ৳${colRec.paidAmount - collectAmount}, স্ট্যাটাস: ${colRec.paidAmount - collectAmount > 0 ? 'PARTIAL' : 'DUE'}`,
+      newValue: `নতুন পরিশোধিত: ৳${newPaidAmount}, বর্তমান স্ট্যাটাস: ${newStatus}, রসিদ: ${receiptNo}`,
+      reason: note || 'সরেজমিনে চাঁদা সংগ্রহ ও ডিজিটাল রসিদ ইস্যু',
       details: `${house.houseNo} (${house.familyHead}, ${house.area}) থেকে ৳${collectAmount} (${paymentMethod}) আদায়। রসিদ নং: ${receiptNo}`
     });
 
