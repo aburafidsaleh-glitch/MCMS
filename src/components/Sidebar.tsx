@@ -5,17 +5,13 @@ import {
   Home,
   Users,
   FileSpreadsheet,
-  History,
-  AlertTriangle,
-  FileText,
   BarChart3,
-  ShieldCheck,
   Settings,
   User,
   Building2,
   X,
   ChevronRight,
-  LogOut,
+  History,
   Sparkles
 } from 'lucide-react';
 import { MosqueProfile, User as UserType } from '../types';
@@ -39,40 +35,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCloseMobile,
   dueCount = 0
 }) => {
-  const navGroups = [
-    {
-      title: 'প্রধান নিয়ন্ত্রণকেন্দ্র (MAIN)',
-      items: [
+  const isCollector = currentUser.role === 'COLLECTOR';
+
+  // Role-based Navigation Items
+  const navItems = isCollector
+    ? [
         { id: 'dashboard', label: 'ড্যাশবোর্ড', icon: LayoutDashboard },
-        { id: 'collector', label: 'চাঁদা আদায় মোড (Field)', icon: Smartphone, highlight: true },
-        { id: 'houses', label: 'বাড়ি ও দাতা তালিকা', icon: Home },
-        { id: 'collectors', label: 'সংগ্রাহকবৃন্দ (Collectors)', icon: Users }
-      ]
-    },
-    {
-      title: 'আদায় ও রসিদ রেজিস্টার (COLLECTIONS)',
-      items: [
-        { id: 'sheet', label: 'মাসিক রেজিস্টার', icon: FileSpreadsheet },
-        { id: 'history', label: 'আদায়ের ইতিহাস', icon: History },
-        { id: 'due', label: 'বকেয়া তালিকা', icon: AlertTriangle, badge: dueCount > 0 ? dueCount : undefined }
-      ]
-    },
-    {
-      title: 'রিপোর্ট ও বিশ্লেষণ (ANALYTICS)',
-      items: [
-        { id: 'analytics', label: 'অ্যাডভান্সড অ্যানালিটিক্স', icon: BarChart3 },
-        { id: 'reports', label: 'আর্থিক রিপোর্ট ও ফাইল', icon: FileText },
-        { id: 'audit', label: 'অডিট লগ (Audit Trail)', icon: ShieldCheck }
-      ]
-    },
-    {
-      title: 'সিস্টেম ও কনফিগারেশন (SYSTEM)',
-      items: [
-        { id: 'settings', label: 'মসজিদ সেটিংস', icon: Settings },
+        { id: 'collector', label: 'চাঁদা আদায় (Collect)', icon: Smartphone, highlight: true },
+        { id: 'history', label: 'আদায়ের ইতিহাস', icon: History },
         { id: 'profile', label: 'আমার প্রোফাইল', icon: User }
       ]
-    }
-  ];
+    : [
+        { id: 'dashboard', label: 'ড্যাশবোর্ড', icon: LayoutDashboard },
+        {
+          id: 'collections',
+          label: 'আদায় ও রেজিস্টার',
+          icon: FileSpreadsheet,
+          badge: dueCount > 0 ? dueCount : undefined
+        },
+        { id: 'houses', label: 'বাড়ি ও দাতা তালিকা', icon: Home },
+        { id: 'collectors', label: 'সংগ্রাহকবৃন্দ (Collectors)', icon: Users },
+        { id: 'reports', label: 'রিপোর্ট ও অ্যানালিটিক্স', icon: BarChart3 },
+        { id: 'settings', label: 'মসজিদ সেটিংস', icon: Settings }
+      ];
 
   return (
     <>
@@ -90,7 +75,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
         }`}
       >
-        {/* Top Header / Branding */}
+        {/* Top Branding */}
         <div className="p-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-950/60">
           <div className="flex items-center space-x-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-800 to-emerald-600 border border-emerald-500/40 flex items-center justify-center text-amber-300 font-bold shadow-md">
@@ -115,60 +100,57 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
 
-        {/* Navigation Items List */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-800">
-          {navGroups.map((group) => (
-            <div key={group.title} className="space-y-1">
-              <h3 className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                {group.title}
-              </h3>
-              {group.items.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.id;
+        {/* Navigation List */}
+        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1 scrollbar-thin scrollbar-thumb-slate-800">
+          <div className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+            {isCollector ? 'সংগ্রাহক প্যানেল (COLLECTOR MENU)' : 'প্রধান প্যানেল (MAIN MENU)'}
+          </div>
 
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      onTabChange(item.id);
-                      onCloseMobile();
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  onTabChange(item.id);
+                  onCloseMobile();
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
+                  isActive
+                    ? 'bg-emerald-700/90 text-white shadow-md shadow-emerald-950/40 font-bold border border-emerald-500/30'
+                    : item.highlight
+                    ? 'bg-emerald-950/80 text-amber-300 hover:bg-emerald-900/90 border border-emerald-800/80'
+                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center space-x-2.5 truncate">
+                  <Icon
+                    className={`w-4 h-4 shrink-0 ${
                       isActive
-                        ? 'bg-emerald-700/90 text-white shadow-md shadow-emerald-950/40 font-bold border border-emerald-500/30'
+                        ? 'text-amber-300'
                         : item.highlight
-                        ? 'bg-emerald-950/80 text-amber-300 hover:bg-emerald-900/90 border border-emerald-800/80'
-                        : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                        ? 'text-amber-300'
+                        : 'text-slate-400'
                     }`}
-                  >
-                    <div className="flex items-center space-x-2.5 truncate">
-                      <Icon
-                        className={`w-4 h-4 shrink-0 ${
-                          isActive
-                            ? 'text-amber-300'
-                            : item.highlight
-                            ? 'text-amber-300'
-                            : 'text-slate-400'
-                        }`}
-                      />
-                      <span className="truncate">{item.label}</span>
-                    </div>
+                  />
+                  <span className="truncate">{item.label}</span>
+                </div>
 
-                    {item.badge !== undefined && (
-                      <span className="bg-red-500/20 text-red-400 border border-red-500/30 font-bold text-[10px] px-2 py-0.5 rounded-full shrink-0">
-                        {item.badge}
-                      </span>
-                    )}
+                {item.badge !== undefined && (
+                  <span className="bg-red-500/20 text-red-400 border border-red-500/30 font-bold text-[10px] px-2 py-0.5 rounded-full shrink-0">
+                    {item.badge}
+                  </span>
+                )}
 
-                    {isActive && <ChevronRight className="w-3.5 h-3.5 text-amber-300 shrink-0 ml-1" />}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
+                {isActive && <ChevronRight className="w-3.5 h-3.5 text-amber-300 shrink-0 ml-1" />}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Future Capabilities Teaser Badge */}
+        {/* Status Teaser Badge */}
         <div className="p-3 mx-3 mb-2 rounded-xl bg-gradient-to-br from-emerald-950 to-slate-900 border border-emerald-800/40 text-[11px] text-slate-300 flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
           <div>
@@ -177,7 +159,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {/* User Card at Sidebar Bottom */}
+        {/* User Card */}
         <div className="p-3 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between">
           <div className="flex items-center space-x-2.5 overflow-hidden">
             <div className="w-8 h-8 rounded-full bg-emerald-800 text-amber-300 font-bold flex items-center justify-center text-xs shrink-0 border border-emerald-600">

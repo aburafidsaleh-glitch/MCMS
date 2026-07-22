@@ -11,15 +11,12 @@ import { House, CollectionRecord, PaymentTransaction, AuditLog, MosqueProfile, U
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { CollectorView } from './components/CollectorView';
+import { CollectorDashboard } from './components/CollectorDashboard';
 import { Dashboard } from './components/Dashboard';
 import { HouseManagement } from './components/HouseManagement';
 import { CollectorManagement } from './components/CollectorManagement';
-import { MonthlyCollection } from './components/MonthlyCollection';
-import { CollectionHistory } from './components/CollectionHistory';
-import { DueList } from './components/DueList';
-import { ReportsView } from './components/ReportsView';
-import { AnalyticsView } from './components/AnalyticsView';
-import { AuditLogsView } from './components/AuditLogsView';
+import { CollectionsModule } from './components/CollectionsModule';
+import { ReportsModule } from './components/ReportsModule';
 import { SettingsView } from './components/SettingsView';
 import { ReceiptModal } from './components/ReceiptModal';
 import { AISummaryModal } from './components/AISummaryModal';
@@ -27,7 +24,7 @@ import { ToastContainer, ToastMessage } from './components/Toast';
 
 export default function App() {
   const [profile, setProfile] = useState<MosqueProfile>(INITIAL_MOSQUE_PROFILE);
-  const [currentUser, setCurrentUser] = useState<User>(INITIAL_USERS[0]); // Admin
+  const [currentUser, setCurrentUser] = useState<User>(INITIAL_USERS[0]); // Admin by default
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [currentMonth, setCurrentMonth] = useState<string>('2026-07'); // July 2026
 
@@ -344,6 +341,8 @@ export default function App() {
   const currentCollections = collections.filter(c => c.month === currentMonth);
   const dueCount = currentCollections.filter(c => c.status === 'DUE' || c.status === 'PARTIAL').length;
 
+  const isCollectorRole = currentUser.role === 'COLLECTOR';
+
   return (
     <div className="min-h-screen bg-slate-100/70 text-slate-900 flex font-sans antialiased">
       {/* Sidebar Navigation */}
@@ -365,6 +364,7 @@ export default function App() {
           currentUser={currentUser}
           onUserChange={(u) => {
             setCurrentUser(u);
+            setActiveTab('dashboard'); // Reset to default dashboard on user role change
             triggerToast(`ইউজার পরিবর্তিত হয়েছে: ${u.name}`, `রোল: ${u.role}`, 'info');
           }}
           currentMonth={currentMonth}
@@ -381,17 +381,29 @@ export default function App() {
         {/* View Router */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
           {activeTab === 'dashboard' && (
-            <Dashboard
-              mosque={profile}
-              houses={houses}
-              collections={collections}
-              transactions={transactions}
-              currentMonth={currentMonth}
-              onGenerateNextMonth={handleGenerateNextMonth}
-              onOpenAiSummary={() => setIsAiSummaryOpen(true)}
-              onNavigateTab={setActiveTab}
-              onViewReceipt={(rec) => setActiveReceipt(rec)}
-            />
+            isCollectorRole ? (
+              <CollectorDashboard
+                currentUser={currentUser}
+                houses={houses}
+                collections={collections}
+                transactions={transactions}
+                currentMonth={currentMonth}
+                onNavigateTab={setActiveTab}
+                onViewReceipt={(rec) => setActiveReceipt(rec)}
+              />
+            ) : (
+              <Dashboard
+                mosque={profile}
+                houses={houses}
+                collections={collections}
+                transactions={transactions}
+                currentMonth={currentMonth}
+                onGenerateNextMonth={handleGenerateNextMonth}
+                onOpenAiSummary={() => setIsAiSummaryOpen(true)}
+                onNavigateTab={setActiveTab}
+                onViewReceipt={(rec) => setActiveReceipt(rec)}
+              />
+            )
           )}
 
           {activeTab === 'collector' && (
@@ -405,7 +417,7 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'houses' && (
+          {activeTab === 'houses' && !isCollectorRole && (
             <HouseManagement
               houses={houses}
               collections={collections}
@@ -418,7 +430,7 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'collectors' && (
+          {activeTab === 'collectors' && !isCollectorRole && (
             <CollectorManagement
               collections={collections}
               houses={houses}
@@ -426,10 +438,11 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'sheet' && (
-            <MonthlyCollection
+          {(activeTab === 'collections' || activeTab === 'sheet' || activeTab === 'due') && !isCollectorRole && (
+            <CollectionsModule
               houses={houses}
               collections={collections}
+              transactions={transactions}
               currentMonth={currentMonth}
               currentUser={currentUser}
               onMonthChange={(m) => {
@@ -447,48 +460,41 @@ export default function App() {
               }}
               onCollectPayment={handleCollectPayment}
               onViewReceipt={(rec) => setActiveReceipt(rec)}
+              defaultSubTab={activeTab === 'due' ? 'pending' : 'monthly'}
             />
           )}
 
           {activeTab === 'history' && (
-            <CollectionHistory
-              transactions={transactions}
-              currentMonth={currentMonth}
-              onViewReceipt={(rec) => setActiveReceipt(rec)}
-            />
-          )}
-
-          {activeTab === 'due' && (
-            <DueList
+            <CollectionsModule
               houses={houses}
               collections={collections}
+              transactions={transactions}
+              currentMonth={currentMonth}
               currentUser={currentUser}
+              onMonthChange={(m) => {
+                setCurrentMonth(m);
+                fetchCollections(m);
+              }}
+              onGenerateSheet={async (m) => {}}
               onCollectPayment={handleCollectPayment}
+              onViewReceipt={(rec) => setActiveReceipt(rec)}
+              defaultSubTab="history"
             />
           )}
 
-          {activeTab === 'reports' && (
-            <ReportsView
+          {(activeTab === 'reports' || activeTab === 'analytics' || activeTab === 'audit') && !isCollectorRole && (
+            <ReportsModule
+              houses={houses}
+              collections={collections}
               transactions={transactions}
               auditLogs={auditLogs}
-              onViewReceipt={(rec) => setActiveReceipt(rec)}
-            />
-          )}
-
-          {activeTab === 'analytics' && (
-            <AnalyticsView
-              houses={houses}
-              collections={collections}
-              transactions={transactions}
               currentMonth={currentMonth}
+              onViewReceipt={(rec) => setActiveReceipt(rec)}
+              defaultSubTab={activeTab === 'analytics' ? 'analytics' : activeTab === 'audit' ? 'audit' : 'reports'}
             />
           )}
 
-          {activeTab === 'audit' && (
-            <AuditLogsView auditLogs={auditLogs} />
-          )}
-
-          {activeTab === 'settings' && (
+          {activeTab === 'settings' && !isCollectorRole && (
             <SettingsView
               mosque={profile}
               currentUser={currentUser}
@@ -512,7 +518,7 @@ export default function App() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
             <p>© {new Date().getFullYear()} {profile.name} — MCMS Digital (মসজিদ চাঁদা ও কালেকশন সফটওয়্যার)</p>
             <p className="text-[11px] text-emerald-800 font-semibold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
-              ডিজিটাল বাংলাদেশ উদ্যোগ | সংস্করণ ২.৫
+              ডিজিটাল বাংলাদেশ উদ্যোগ | সংস্করণ ২.৫ (Phase 2 Simplified)
             </p>
           </div>
         </footer>

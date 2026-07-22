@@ -4,16 +4,11 @@ import {
   Plus,
   FileSpreadsheet,
   Search,
-  Filter,
   Edit,
   Trash2,
-  Phone,
-  MapPin,
   CheckCircle,
   XCircle,
   Download,
-  Upload,
-  UserCheck,
   FileText
 } from 'lucide-react';
 import { House, CollectionRecord, HouseCategory, User } from '../types';
@@ -43,6 +38,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedArea, setSelectedArea] = useState('ALL');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [selectedHouseIds, setSelectedHouseIds] = useState<string[]>([]);
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -50,7 +46,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
   const [editingHouse, setEditingHouse] = useState<House | null>(null);
   const [viewingHouse, setViewingHouse] = useState<House | null>(null);
 
-  // Add/Edit House Form State
+  // Form State
   const [formData, setFormData] = useState({
     houseNo: '',
     houseName: '',
@@ -63,7 +59,6 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
     notes: ''
   });
 
-  // CSV text for bulk import
   const [csvText, setCsvText] = useState('');
 
   const areas = ['ALL', 'পূর্ব পাড়া', 'পশ্চিম পাড়া', 'উত্তর পাড়া', 'দক্ষিণ পাড়া', 'মধ্য বাজার'];
@@ -82,6 +77,28 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
 
     return matchesSearch && matchesArea && matchesCategory;
   });
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedHouseIds(filteredHouses.map(h => h.id));
+    } else {
+      setSelectedHouseIds([]);
+    }
+  };
+
+  const handleSelectOne = (id: string) => {
+    setSelectedHouseIds(prev =>
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedHouseIds.length === 0) return;
+    if (confirm(`আপনি কি নিশ্চিত যে নির্বাচন করা ${selectedHouseIds.length} টি বাড়ি মুছে ফেলতে চান?`)) {
+      selectedHouseIds.forEach(id => onDeleteHouse(id));
+      setSelectedHouseIds([]);
+    }
+  };
 
   const handleOpenAdd = () => {
     setFormData({
@@ -147,8 +164,6 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
 
     const lines = csvText.trim().split('\n');
     const items: Partial<House>[] = [];
-
-    // skip header if contains houseNo
     const startIdx = lines[0].toLowerCase().includes('houseno') ? 1 : 0;
 
     for (let i = startIdx; i < lines.length; i++) {
@@ -176,25 +191,35 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header & Main Control Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+      {/* Header & Control Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-xl font-black text-slate-900 flex items-center gap-2">
             <Building2 className="w-5 h-5 text-emerald-700" />
-            <span>বাড়ি ও দাতা তালিকা পরিচালনা (House Directory)</span>
+            <span>বাড়ি ও দাতা নির্দেশিকা (House Directory)</span>
           </h1>
-          <p className="text-xs text-gray-500 mt-0.5">
-            মসজিদের মহল্লাভিত্তিক নিবন্ধিত বাড়ি, দাতার নাম ও নির্ধারিত চাঁদার হিসাব
+          <p className="text-xs text-slate-500 mt-0.5">
+            নিবন্ধিত বাড়ি: <strong className="text-slate-800">{toBnDigits(houses.length)} টি</strong>
           </p>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {selectedHouseIds.length > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              className="inline-flex items-center space-x-1.5 px-3 py-2 text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all"
+            >
+              <Trash2 className="w-4 h-4 text-red-600" />
+              <span>নির্বাচিত ({selectedHouseIds.length}) টি মুছুন</span>
+            </button>
+          )}
+
           <button
             onClick={() => setIsBulkImportOpen(true)}
             className="inline-flex items-center space-x-1.5 px-3 py-2 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition-all"
           >
             <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
-            <span>বাল্ক ইমপোর্ট (Excel / CSV)</span>
+            <span>ইমপোর্ট (Excel / CSV)</span>
           </button>
 
           <button
@@ -208,17 +233,17 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-3">
+      <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Search */}
-          <div className="relative col-span-1 sm:col-span-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="বাড়ি নম্বর, দাতা বা ফোন দিয়ে খুঁজুন..."
-              className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              placeholder="বাড়ি নং, দাতা বা ফোন দিয়ে খুঁজুন..."
+              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600"
             />
           </div>
 
@@ -227,7 +252,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
             <select
               value={selectedArea}
               onChange={(e) => setSelectedArea(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-gray-700"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600 font-medium text-slate-700"
             >
               <option value="ALL">সকল মহল্লা / পাড়া</option>
               {areas.filter(a => a !== 'ALL').map(a => (
@@ -241,7 +266,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-gray-700"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600 font-medium text-slate-700"
             >
               <option value="ALL">সকল ক্যাটাগরি</option>
               {categories.filter(c => c !== 'ALL').map(c => (
@@ -253,11 +278,19 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
       </div>
 
       {/* House Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="bg-gray-50 text-gray-600 border-b border-gray-200">
+              <tr className="bg-slate-50 text-slate-600 border-b border-slate-200">
+                <th className="p-3.5 w-10">
+                  <input
+                    type="checkbox"
+                    checked={filteredHouses.length > 0 && selectedHouseIds.length === filteredHouses.length}
+                    onChange={handleSelectAll}
+                    className="rounded text-emerald-800 focus:ring-emerald-600"
+                  />
+                </th>
                 <th className="p-3.5 font-bold">বাড়ি নম্বর</th>
                 <th className="p-3.5 font-bold">পরিবারের প্রধান ও ভবনের নাম</th>
                 <th className="p-3.5 font-bold">মহল্লা / এলাকা</th>
@@ -268,77 +301,89 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
                 <th className="p-3.5 font-bold text-right">আকশন</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-100">
               {filteredHouses.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-gray-500">
+                  <td colSpan={9} className="p-8 text-center text-slate-500">
                     কোনো বাড়ি পাওয়া যায়নি।
                   </td>
                 </tr>
               ) : (
-                filteredHouses.map(house => (
-                  <tr key={house.id} className="hover:bg-emerald-50/20 transition-colors">
-                    <td className="p-3.5 font-mono font-bold text-emerald-900">
-                      {house.houseNo}
-                    </td>
-                    <td className="p-3.5">
-                      <div className="font-bold text-gray-900">{house.familyHead}</div>
-                      <div className="text-[11px] text-gray-500">{house.houseName}</div>
-                    </td>
-                    <td className="p-3.5 text-gray-700 font-medium">{house.area}</td>
-                    <td className="p-3.5 font-mono text-gray-700">{toBnDigits(house.phone)}</td>
-                    <td className="p-3.5 font-extrabold text-emerald-800">
-                      {formatBDT(house.monthlyPledge)}
-                    </td>
-                    <td className="p-3.5">
-                      <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-[11px] font-medium">
-                        {house.category}
-                      </span>
-                    </td>
-                    <td className="p-3.5">
-                      {house.isActive ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                          <CheckCircle className="w-3 h-3" />
-                          <span>সক্রিয়</span>
+                filteredHouses.map(house => {
+                  const isSelected = selectedHouseIds.includes(house.id);
+
+                  return (
+                    <tr key={house.id} className={`hover:bg-emerald-50/20 transition-colors ${isSelected ? 'bg-emerald-50/40' : ''}`}>
+                      <td className="p-3.5">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleSelectOne(house.id)}
+                          className="rounded text-emerald-800 focus:ring-emerald-600"
+                        />
+                      </td>
+                      <td className="p-3.5 font-mono font-bold text-emerald-900">
+                        {house.houseNo}
+                      </td>
+                      <td className="p-3.5">
+                        <div className="font-bold text-slate-900">{house.familyHead}</div>
+                        <div className="text-[11px] text-slate-500">{house.houseName}</div>
+                      </td>
+                      <td className="p-3.5 text-slate-700 font-medium">{house.area}</td>
+                      <td className="p-3.5 font-mono text-slate-700">{toBnDigits(house.phone)}</td>
+                      <td className="p-3.5 font-extrabold text-emerald-800">
+                        {formatBDT(house.monthlyPledge)}
+                      </td>
+                      <td className="p-3.5">
+                        <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[11px] font-medium">
+                          {house.category}
                         </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                          <XCircle className="w-3 h-3" />
-                          <span>নিষ্ক্রিয়</span>
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-3.5 text-right">
-                      <div className="flex items-center justify-end space-x-1.5">
-                        <button
-                          onClick={() => setViewingHouse(house)}
-                          title="প্রোফাইল ও হিসাবের ইতিহাস"
-                          className="p-1.5 text-emerald-800 hover:bg-emerald-100 rounded-lg transition-colors"
-                        >
-                          <FileText className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleOpenEdit(house)}
-                          title="সম্পাদনা করুন"
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(`আপনি কি নিশ্চিত যে ${house.houseNo} মুছে ফেলতে চান?`)) {
-                              onDeleteHouse(house.id);
-                            }
-                          }}
-                          title="মুছে ফেলুন"
-                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="p-3.5">
+                        {house.isActive ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                            <CheckCircle className="w-3 h-3" />
+                            <span>সক্রিয়</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                            <XCircle className="w-3 h-3" />
+                            <span>নিষ্ক্রিয়</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-3.5 text-right">
+                        <div className="flex items-center justify-end space-x-1.5">
+                          <button
+                            onClick={() => setViewingHouse(house)}
+                            title="প্রোফাইল ও হিসাবের ইতিহাস"
+                            className="p-1.5 text-emerald-800 hover:bg-emerald-100 rounded-lg transition-colors"
+                          >
+                            <FileText className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleOpenEdit(house)}
+                            title="সম্পাদনা করুন"
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`আপনি কি নিশ্চিত যে ${house.houseNo} মুছে ফেলতে চান?`)) {
+                                onDeleteHouse(house.id);
+                              }
+                            }}
+                            title="মুছে ফেলুন"
+                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -349,69 +394,69 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
           <div className="w-full max-w-lg bg-white rounded-2xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h3 className="text-lg font-bold text-gray-900">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-lg font-bold text-slate-900">
                 {editingHouse ? 'বাড়ি সম্পাদনা করুন' : 'নতুন বাড়ি নিবন্ধন করুন'}
               </h3>
-              <button onClick={() => setIsAddModalOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+              <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-600">✕</button>
             </div>
 
             <form onSubmit={handleSubmitHouse} className="space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-gray-700 block mb-1">বাড়ি নম্বর *</label>
+                  <label className="font-bold text-slate-700 block mb-1">বাড়ি নম্বর *</label>
                   <input
                     type="text"
                     required
                     placeholder="যেমন: ১০১/এ"
                     value={formData.houseNo}
                     onChange={(e) => setFormData({ ...formData, houseNo: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-gray-700 block mb-1">ভবন / বাড়ির নাম</label>
+                  <label className="font-bold text-slate-700 block mb-1">ভবন / বাড়ির নাম</label>
                   <input
                     type="text"
                     placeholder="যেমন: বাইতুল আমান ভিলা"
                     value={formData.houseName}
                     onChange={(e) => setFormData({ ...formData, houseName: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-gray-700 block mb-1">পরিবারের প্রধানের নাম *</label>
+                  <label className="font-bold text-slate-700 block mb-1">পরিবারের প্রধানের নাম *</label>
                   <input
                     type="text"
                     required
                     placeholder="যেমন: হাজী আব্দুর রশিদ"
                     value={formData.familyHead}
                     onChange={(e) => setFormData({ ...formData, familyHead: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-gray-700 block mb-1">মোবাইল নম্বর</label>
+                  <label className="font-bold text-slate-700 block mb-1">মোবাইল নম্বর</label>
                   <input
                     type="text"
                     placeholder="01712-000000"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 font-mono"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-gray-700 block mb-1">মহল্লা / এলাকা</label>
+                  <label className="font-bold text-slate-700 block mb-1">মহল্লা / এলাকা</label>
                   <select
                     value={formData.area}
                     onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 font-medium"
                   >
                     {areas.filter(a => a !== 'ALL').map(a => (
                       <option key={a} value={a}>{a}</option>
@@ -420,23 +465,23 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
                 </div>
 
                 <div>
-                  <label className="font-bold text-gray-700 block mb-1">মাসিক চাঁদার পরিমাণ (BDT) *</label>
+                  <label className="font-bold text-slate-700 block mb-1">মাসিক চাঁদার পরিমাণ (BDT) *</label>
                   <input
                     type="number"
                     required
                     value={formData.monthlyPledge}
                     onChange={(e) => setFormData({ ...formData, monthlyPledge: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-emerald-900"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 font-bold text-emerald-900"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="font-bold text-gray-700 block mb-1">ক্যাটাগরি</label>
+                <label className="font-bold text-slate-700 block mb-1">ক্যাটাগরি</label>
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value as HouseCategory })}
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600"
                 >
                   <option value="General">General (সাধারণ)</option>
                   <option value="Donation Premium">Donation Premium (বিশেষ দানশীল)</option>
@@ -445,22 +490,11 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
                 </select>
               </div>
 
-              <div>
-                <label className="font-bold text-gray-700 block mb-1">বিস্তারিত ঠিকানা</label>
-                <input
-                  type="text"
-                  placeholder="যেমন: রোড # ২, ব্লক-বি"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-
               <div className="pt-3 flex justify-end space-x-2">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium"
                 >
                   বাতিল
                 </button>
@@ -480,12 +514,12 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
       {isBulkImportOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
           <div className="w-full max-w-xl bg-white rounded-2xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center space-x-2">
                 <FileSpreadsheet className="w-5 h-5 text-emerald-700" />
-                <h3 className="text-lg font-bold text-gray-900">একসাথে একাধিক বাড়ি ইমপোর্ট (Bulk CSV)</h3>
+                <h3 className="text-lg font-bold text-slate-900">একসাথে একাধিক বাড়ি ইমপোর্ট (Bulk CSV)</h3>
               </div>
-              <button onClick={() => setIsBulkImportOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+              <button onClick={() => setIsBulkImportOpen(false)} className="text-slate-400 hover:text-slate-600">✕</button>
             </div>
 
             <div className="space-y-3 text-xs">
@@ -504,7 +538,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
               </div>
 
               <div>
-                <label className="font-bold text-gray-700 block mb-1">
+                <label className="font-bold text-slate-700 block mb-1">
                   সিএসভি ফাইল থেকে কপি করা টেক্সট এখানে পেস্ট করুন:
                 </label>
                 <textarea
@@ -512,14 +546,14 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
                   value={csvText}
                   onChange={(e) => setCsvText(e.target.value)}
                   placeholder="১০১/এ, মিয়া ভবন, হাজী মোঃ রফিকুল ইসলাম, 01711223344, পূর্ব পাড়া, 500"
-                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600"
                 ></textarea>
               </div>
 
               <div className="pt-2 flex justify-end space-x-2">
                 <button
                   onClick={() => setIsBulkImportOpen(false)}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-medium"
+                  className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-medium"
                 >
                   বাতিল
                 </button>
@@ -536,40 +570,40 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
         </div>
       )}
 
-      {/* Modal 3: Viewing Individual House Profile & Payment History */}
+      {/* Modal 3: Viewing Individual House Profile */}
       {viewingHouse && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
           <div className="w-full max-w-lg bg-white rounded-2xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">
                   {viewingHouse.houseNo}
                 </span>
-                <h3 className="text-lg font-bold text-gray-900 mt-1">{viewingHouse.familyHead}</h3>
-                <p className="text-xs text-gray-500">{viewingHouse.houseName} - {viewingHouse.area}</p>
+                <h3 className="text-lg font-bold text-slate-900 mt-1">{viewingHouse.familyHead}</h3>
+                <p className="text-xs text-slate-500">{viewingHouse.houseName} - {viewingHouse.area}</p>
               </div>
-              <button onClick={() => setViewingHouse(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+              <button onClick={() => setViewingHouse(null)} className="text-slate-400 hover:text-slate-600">✕</button>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="grid grid-cols-2 gap-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
+              <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
                 <div>
-                  <span className="text-gray-400 block">মোবাইল:</span>
-                  <span className="font-mono font-bold text-gray-800">{toBnDigits(viewingHouse.phone)}</span>
+                  <span className="text-slate-400 block">মোবাইল:</span>
+                  <span className="font-mono font-bold text-slate-800">{toBnDigits(viewingHouse.phone)}</span>
                 </div>
                 <div>
-                  <span className="text-gray-400 block">মাসিক ফি:</span>
+                  <span className="text-slate-400 block">মাসিক ফি:</span>
                   <span className="font-bold text-emerald-800">{formatBDT(viewingHouse.monthlyPledge)}</span>
                 </div>
               </div>
 
-              <h4 className="font-bold text-gray-900 pt-2 border-t border-gray-100">মাসিক চাঁদা পরিশোধ ইতিহাস</h4>
+              <h4 className="font-bold text-slate-900 pt-2 border-t border-slate-100">মাসিক চাঁদা পরিশোধ ইতিহাস</h4>
               <div className="space-y-2 max-h-56 overflow-y-auto">
                 {collections.filter(c => c.houseId === viewingHouse.id).map(col => (
-                  <div key={col.id} className="p-2.5 bg-white border border-gray-200 rounded-xl flex items-center justify-between">
+                  <div key={col.id} className="p-2.5 bg-white border border-slate-200 rounded-xl flex items-center justify-between">
                     <div>
-                      <span className="font-bold text-gray-800 block">{formatMonthName(col.month)}</span>
-                      <span className="text-[11px] text-gray-500">
+                      <span className="font-bold text-slate-800 block">{formatMonthName(col.month)}</span>
+                      <span className="text-[11px] text-slate-500">
                         {col.status === 'PAID' ? `রসিদ: ${col.receiptNo}` : col.status === 'PARTIAL' ? 'আংশিক জমা' : 'সম্পূর্ণ বকেয়া'}
                       </span>
                     </div>
@@ -578,7 +612,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
                       <span className={`font-bold block ${col.status === 'PAID' ? 'text-emerald-700' : 'text-red-600'}`}>
                         {formatBDT(col.paidAmount)} / {formatBDT(col.targetAmount)}
                       </span>
-                      <span className="text-[10px] text-gray-400">
+                      <span className="text-[10px] text-slate-400">
                         {col.lastPaidDate || 'পরিশোধ হয়নি'}
                       </span>
                     </div>
@@ -590,7 +624,7 @@ export const HouseManagement: React.FC<HouseManagementProps> = ({
             <div className="pt-2 text-right">
               <button
                 onClick={() => setViewingHouse(null)}
-                className="px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-xl"
+                className="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-xl"
               >
                 বন্ধ করুন
               </button>
