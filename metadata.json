@@ -1,0 +1,6 @@
+{
+  "name": "Mosque Collection Management System (MCMS)",
+  "description": "ডিজিটাল মসজিদ চাঁদা ব্যবস্থাপনা সিস্টেম - বাড়িভিত্তিক মাসিক চাঁদা আদায়, ডিজিটালাইজড রসিদ, বকেয়া হিসাব ও রিয়েল-টাইম রিপোর্ট",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
