@@ -8,20 +8,27 @@ import {
   INITIAL_AUDIT_LOGS
 } from './data/mockData';
 import { House, CollectionRecord, PaymentTransaction, AuditLog, MosqueProfile, User, PaymentMethod } from './types';
-import { Navbar } from './components/Navbar';
+import { Sidebar } from './components/Sidebar';
+import { Header } from './components/Header';
 import { CollectorView } from './components/CollectorView';
 import { Dashboard } from './components/Dashboard';
 import { HouseManagement } from './components/HouseManagement';
+import { CollectorManagement } from './components/CollectorManagement';
 import { MonthlyCollection } from './components/MonthlyCollection';
+import { CollectionHistory } from './components/CollectionHistory';
 import { DueList } from './components/DueList';
 import { ReportsView } from './components/ReportsView';
+import { AnalyticsView } from './components/AnalyticsView';
+import { AuditLogsView } from './components/AuditLogsView';
+import { SettingsView } from './components/SettingsView';
 import { ReceiptModal } from './components/ReceiptModal';
 import { AISummaryModal } from './components/AISummaryModal';
+import { ToastContainer, ToastMessage } from './components/Toast';
 
 export default function App() {
   const [profile, setProfile] = useState<MosqueProfile>(INITIAL_MOSQUE_PROFILE);
   const [currentUser, setCurrentUser] = useState<User>(INITIAL_USERS[0]); // Admin
-  const [activeTab, setActiveTab] = useState<string>('collector'); // Default Collector mode for instant quick collection!
+  const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [currentMonth, setCurrentMonth] = useState<string>('2026-07'); // July 2026
 
   const [houses, setHouses] = useState<House[]>(INITIAL_HOUSES);
@@ -29,9 +36,24 @@ export default function App() {
   const [transactions, setTransactions] = useState<PaymentTransaction[]>(INITIAL_TRANSACTIONS);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(INITIAL_AUDIT_LOGS);
 
-  // Modals State
+  // UI state
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  // Modals
   const [activeReceipt, setActiveReceipt] = useState<any | null>(null);
   const [isAiSummaryOpen, setIsAiSummaryOpen] = useState(false);
+
+  // Toast Helper
+  const triggerToast = (title: string, message?: string, type: 'success' | 'error' | 'info' = 'success') => {
+    const id = `TOAST-${Date.now()}-${Math.random().toString().slice(-3)}`;
+    setToasts(prev => [...prev, { id, title, message, type }]);
+  };
+
+  const dismissToast = (id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
 
   // Fetch initial data from server API
   useEffect(() => {
@@ -71,7 +93,6 @@ export default function App() {
       const res = await fetch(`/api/collections?month=${m}`);
       if (res.ok) {
         const data = await res.json();
-        // Merge with existing state for other months
         setCollections(prev => {
           const filteredOtherMonths = prev.filter(c => c.month !== m);
           return [...filteredOtherMonths, ...data];
@@ -124,17 +145,14 @@ export default function App() {
       });
 
       if (res.ok) {
-        const data = await res.json();
-        // Refresh
         fetchCollections(payload.month);
         fetchTransactions();
         fetchAuditLogs();
+        triggerToast('চাঁদা আদায় সফল হয়েছে!', `৳${payload.amount} জমা নেওয়া হয়েছে।`, 'success');
       } else {
-        // Local optimistic fallback
         applyLocalPayment(payload);
       }
     } catch (err) {
-      console.warn('Payment API offline, applying local state update:', err);
       applyLocalPayment(payload);
     }
   };
@@ -194,7 +212,6 @@ export default function App() {
       return updated;
     });
 
-    // Add transaction
     const newTrx: PaymentTransaction = {
       id: `TRX-${Date.now().toString().slice(-6)}`,
       receiptNo,
@@ -213,6 +230,7 @@ export default function App() {
     };
 
     setTransactions(prev => [newTrx, ...prev]);
+    triggerToast('চাঁদা আদায় জমা হয়েছে!', `৳${amount} (${paymentMethod}) রসিদ নং: ${receiptNo}`, 'success');
   };
 
   const handleAddHouse = async (houseData: Partial<House>) => {
@@ -225,6 +243,7 @@ export default function App() {
       if (res.ok) {
         fetchHouses();
         fetchCollections(currentMonth);
+        triggerToast('নতুন বাড়ি নিবন্ধিত হয়েছে!', `${houseData.houseNo} - ${houseData.familyHead}`, 'success');
       }
     } catch (e) {
       console.warn('Add house offline fallback', e);
@@ -240,6 +259,7 @@ export default function App() {
       });
       if (res.ok) {
         fetchHouses();
+        triggerToast('বাড়ি আপডেট সফল হয়েছে!', `${houseData.houseNo}`, 'info');
       }
     } catch (e) {
       console.warn('Update house fallback', e);
@@ -251,6 +271,7 @@ export default function App() {
       const res = await fetch(`/api/houses/${id}`, { method: 'DELETE' });
       if (res.ok) {
         fetchHouses();
+        triggerToast('বাড়ি মুছে ফেলা হয়েছে!', '', 'info');
       }
     } catch (e) {
       console.warn('Delete house fallback', e);
@@ -265,8 +286,10 @@ export default function App() {
         body: JSON.stringify({ items, currentMonth, userId: currentUser.id, userName: currentUser.name })
       });
       if (res.ok) {
+        const data = await res.json();
         fetchHouses();
         fetchCollections(currentMonth);
+        triggerToast('বাল্ক ইমপোর্ট সফল হয়েছে!', `একসাথে ${data.addedCount || items.length} টি বাড়ি ডাটাবেসে নিবন্ধিত হয়েছে।`, 'success');
       }
     } catch (e) {
       console.warn('Bulk import fallback', e);
@@ -284,119 +307,216 @@ export default function App() {
       if (res.ok) {
         setCurrentMonth(nextMonth);
         fetchCollections(nextMonth);
-        alert(`${nextMonth} মাসের জন্য সফলভাবে নতুন চাঁদার রেজিস্টার তৈরি করা হয়েছে!`);
+        triggerToast(`${nextMonth} মাসের রেজিস্টার তৈরি হয়েছে!`, 'সকল সক্রিয় বাড়ির চাঁদার হিসেব সংযুক্ত করা হয়েছে।', 'success');
       }
     } catch (e) {
       console.warn('Generate month sheet fallback', e);
     }
   };
 
+  const handleUpdateMosqueProfile = async (updated: MosqueProfile) => {
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProfile(data);
+      }
+    } catch (e) {
+      setProfile(updated);
+    }
+  };
+
+  const handleQuickAction = (action: 'COLLECT' | 'ADD_HOUSE' | 'GENERATE_SHEET') => {
+    if (action === 'COLLECT') {
+      setActiveTab('collector');
+    } else if (action === 'ADD_HOUSE') {
+      setActiveTab('houses');
+    } else if (action === 'GENERATE_SHEET') {
+      handleGenerateNextMonth();
+    }
+  };
+
+  // Due counts for current month
+  const currentCollections = collections.filter(c => c.month === currentMonth);
+  const dueCount = currentCollections.filter(c => c.status === 'DUE' || c.status === 'PARTIAL').length;
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      {/* Navbar */}
-      <Navbar
+    <div className="min-h-screen bg-slate-100/70 text-slate-900 flex font-sans antialiased">
+      {/* Sidebar Navigation */}
+      <Sidebar
         mosque={profile}
         currentUser={currentUser}
-        onUserChange={setCurrentUser}
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        currentMonth={currentMonth}
-        onMonthChange={(m) => {
-          setCurrentMonth(m);
-          fetchCollections(m);
-        }}
+        isMobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        dueCount={dueCount}
       />
 
-      {/* Main App Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
-        {activeTab === 'collector' && (
-          <CollectorView
-            houses={houses}
-            collections={collections}
-            currentMonth={currentMonth}
-            currentUser={currentUser}
-            onCollectPayment={handleCollectPayment}
-            onViewReceipt={(rec) => setActiveReceipt(rec)}
-          />
-        )}
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Header Bar */}
+        <Header
+          mosque={profile}
+          currentUser={currentUser}
+          onUserChange={(u) => {
+            setCurrentUser(u);
+            triggerToast(`ইউজার পরিবর্তিত হয়েছে: ${u.name}`, `রোল: ${u.role}`, 'info');
+          }}
+          currentMonth={currentMonth}
+          onMonthChange={(m) => {
+            setCurrentMonth(m);
+            fetchCollections(m);
+          }}
+          onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
+          onQuickAction={handleQuickAction}
+          onSearchQuery={setGlobalSearchQuery}
+          auditLogs={auditLogs}
+        />
 
-        {activeTab === 'dashboard' && (
-          <Dashboard
-            mosque={profile}
-            houses={houses}
-            collections={collections}
-            transactions={transactions}
-            currentMonth={currentMonth}
-            onGenerateNextMonth={handleGenerateNextMonth}
-            onOpenAiSummary={() => setIsAiSummaryOpen(true)}
-            onNavigateTab={setActiveTab}
-            onViewReceipt={(rec) => setActiveReceipt(rec)}
-          />
-        )}
+        {/* View Router */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+          {activeTab === 'dashboard' && (
+            <Dashboard
+              mosque={profile}
+              houses={houses}
+              collections={collections}
+              transactions={transactions}
+              currentMonth={currentMonth}
+              onGenerateNextMonth={handleGenerateNextMonth}
+              onOpenAiSummary={() => setIsAiSummaryOpen(true)}
+              onNavigateTab={setActiveTab}
+              onViewReceipt={(rec) => setActiveReceipt(rec)}
+            />
+          )}
 
-        {activeTab === 'houses' && (
-          <HouseManagement
-            houses={houses}
-            collections={collections}
-            currentUser={currentUser}
-            currentMonth={currentMonth}
-            onAddHouse={handleAddHouse}
-            onUpdateHouse={handleUpdateHouse}
-            onDeleteHouse={handleDeleteHouse}
-            onBulkImport={handleBulkImport}
-          />
-        )}
+          {activeTab === 'collector' && (
+            <CollectorView
+              houses={houses}
+              collections={collections}
+              currentMonth={currentMonth}
+              currentUser={currentUser}
+              onCollectPayment={handleCollectPayment}
+              onViewReceipt={(rec) => setActiveReceipt(rec)}
+            />
+          )}
 
-        {activeTab === 'sheet' && (
-          <MonthlyCollection
-            houses={houses}
-            collections={collections}
-            currentMonth={currentMonth}
-            currentUser={currentUser}
-            onMonthChange={(m) => {
-              setCurrentMonth(m);
-              fetchCollections(m);
-            }}
-            onGenerateSheet={async (m) => {
-              await fetch('/api/collections/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ month: m })
-              });
-              fetchCollections(m);
-            }}
-            onCollectPayment={handleCollectPayment}
-            onViewReceipt={(rec) => setActiveReceipt(rec)}
-          />
-        )}
+          {activeTab === 'houses' && (
+            <HouseManagement
+              houses={houses}
+              collections={collections}
+              currentUser={currentUser}
+              currentMonth={currentMonth}
+              onAddHouse={handleAddHouse}
+              onUpdateHouse={handleUpdateHouse}
+              onDeleteHouse={handleDeleteHouse}
+              onBulkImport={handleBulkImport}
+            />
+          )}
 
-        {activeTab === 'due' && (
-          <DueList
-            houses={houses}
-            collections={collections}
-            currentUser={currentUser}
-            onCollectPayment={handleCollectPayment}
-          />
-        )}
+          {activeTab === 'collectors' && (
+            <CollectorManagement
+              collections={collections}
+              houses={houses}
+              currentMonth={currentMonth}
+            />
+          )}
 
-        {activeTab === 'reports' && (
-          <ReportsView
-            transactions={transactions}
-            auditLogs={auditLogs}
-            onViewReceipt={(rec) => setActiveReceipt(rec)}
-          />
-        )}
-      </main>
+          {activeTab === 'sheet' && (
+            <MonthlyCollection
+              houses={houses}
+              collections={collections}
+              currentMonth={currentMonth}
+              currentUser={currentUser}
+              onMonthChange={(m) => {
+                setCurrentMonth(m);
+                fetchCollections(m);
+              }}
+              onGenerateSheet={async (m) => {
+                await fetch('/api/collections/generate', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ month: m })
+                });
+                fetchCollections(m);
+                triggerToast(`${m} রেজিস্টার আপডেট হয়েছে!`, '', 'success');
+              }}
+              onCollectPayment={handleCollectPayment}
+              onViewReceipt={(rec) => setActiveReceipt(rec)}
+            />
+          )}
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 py-6 text-center text-xs text-gray-500 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p>© {new Date().getFullYear()} {profile.name} (MCMS) - মসজিদ কালেকশন ব্যবস্থাপনা সিস্টেম</p>
-          <p className="text-[11px] text-emerald-800 font-semibold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
-            ডিজিটাল মসজিদ ও সমাজ উন্নয়ন উদ্যোগ - বাংলাদেশ
-          </p>
-        </div>
-      </footer>
+          {activeTab === 'history' && (
+            <CollectionHistory
+              transactions={transactions}
+              currentMonth={currentMonth}
+              onViewReceipt={(rec) => setActiveReceipt(rec)}
+            />
+          )}
+
+          {activeTab === 'due' && (
+            <DueList
+              houses={houses}
+              collections={collections}
+              currentUser={currentUser}
+              onCollectPayment={handleCollectPayment}
+            />
+          )}
+
+          {activeTab === 'reports' && (
+            <ReportsView
+              transactions={transactions}
+              auditLogs={auditLogs}
+              onViewReceipt={(rec) => setActiveReceipt(rec)}
+            />
+          )}
+
+          {activeTab === 'analytics' && (
+            <AnalyticsView
+              houses={houses}
+              collections={collections}
+              transactions={transactions}
+              currentMonth={currentMonth}
+            />
+          )}
+
+          {activeTab === 'audit' && (
+            <AuditLogsView auditLogs={auditLogs} />
+          )}
+
+          {activeTab === 'settings' && (
+            <SettingsView
+              mosque={profile}
+              currentUser={currentUser}
+              onUpdateProfile={handleUpdateMosqueProfile}
+              onTriggerToast={triggerToast}
+            />
+          )}
+
+          {activeTab === 'profile' && (
+            <SettingsView
+              mosque={profile}
+              currentUser={currentUser}
+              onUpdateProfile={handleUpdateMosqueProfile}
+              onTriggerToast={triggerToast}
+            />
+          )}
+        </main>
+
+        {/* Footer */}
+        <footer className="bg-white border-t border-slate-200 py-4 px-6 text-xs text-slate-500 mt-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+            <p>© {new Date().getFullYear()} {profile.name} — MCMS Digital (মসজিদ চাঁদা ও কালেকশন সফটওয়্যার)</p>
+            <p className="text-[11px] text-emerald-800 font-semibold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
+              ডিজিটাল বাংলাদেশ উদ্যোগ | সংস্করণ ২.৫
+            </p>
+          </div>
+        </footer>
+      </div>
 
       {/* Global Modals */}
       <ReceiptModal
@@ -412,6 +532,9 @@ export default function App() {
         mosque={profile}
         month={currentMonth}
       />
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
